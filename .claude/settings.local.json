@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/yashkanejiya/Desktop/projects/TalkingCat/.venv/bin/python -c \"from bot import run_bot; print\\('ok'\\)\")"
+    ]
+  }
+}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spell Bee</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-border: #334155;
+      --accent: #f59e0b;
+      --accent-dark: #b45309;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --good: #22c55e;
+      --bad:  #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    h1 span { color: var(--accent); }
+    .tagline {
+      margin: 0 0 24px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    button {
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-start {
+      background: var(--accent);
+      color: #1e1b04;
+    }
+    .btn-start:hover:not(:disabled) { background: #fbbf24; }
+    .btn-end {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-end:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
+
+    /* Status pill */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.connected { background: var(--good); }
+    .dot.connecting { background: var(--accent); animation: pulse 1.2s infinite; }
+    .dot.error { background: var(--bad); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Stats grid */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Round display */
+    .round {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      min-height: 70px;
+    }
+    .round-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .round-content {
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .badge.correct { background: rgba(34,197,94,0.15); color: var(--good); }
+    .badge.incorrect { background: rgba(239,68,68,0.15); color: var(--bad); }
+
+    /* History */
+    .history-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 16px 0 8px 0;
+    }
+    .history {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 6px;
+    }
+    .history-row .word { font-weight: 600; flex: 1; }
+    .history-row .attempt { color: var(--muted); font-family: ui-monospace, monospace; }
+    .history-row.correct { border-left: 3px solid var(--good); }
+    .history-row.incorrect { border-left: 3px solid var(--bad); }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1><span>🐝</span> Spell Bee</h1>
+    <p class="tagline">A voice game. The bot says a word, you spell it out loud.</p>
+
+    <div class="controls">
+      <button id="btn-start" class="btn-start">Start Session</button>
+      <button id="btn-end" class="btn-end" disabled>End</button>
+      <span class="status">
+        <span id="dot" class="dot"></span>
+        <span id="status-text">Disconnected</span>
+      </span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Attempts</div>
+        <div class="stat-value" id="attempts">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Streak</div>
+        <div class="stat-value" id="streak">0</div>
+      </div>
+    </div>
+
+    <div class="round">
+      <div class="round-label">Current Round</div>
+      <div class="round-content" id="round-content">
+        <span class="empty-state">Press Start Session to begin.</span>
+      </div>
+    </div>
+
+    <div class="history-title">History</div>
+    <div class="history" id="history">
+      <div class="empty-state">No words attempted yet.</div>
+    </div>
+  </div>
+
+  <!-- Hidden audio element — Pipecat's transport pipes the bot's voice here. -->
+  <audio id="bot-audio" autoplay playsinline></audio>
+
+  <script type="module">
+    // We use Pipecat's official client-side library to handle the WebRTC
+    // negotiation and RTVI message protocol. It's the same library
+    // demonstrated in the Pipecat foundational examples — pulling it
+    // from esm.sh keeps this single-file frontend dependency-free.
+    import { PipecatClient } from "https://esm.sh/@pipecat-ai/client-js@1?bundle";
+    import { SmallWebRTCTransport } from
+      "https://esm.sh/@pipecat-ai/small-webrtc-transport@1?bundle&deps=@pipecat-ai/client-js@1";
+
+    const els = {
+      btnStart: document.getElementById("btn-start"),
+      btnEnd:   document.getElementById("btn-end"),
+      dot:      document.getElementById("dot"),
+      status:   document.getElementById("status-text"),
+      score:    document.getElementById("score"),
+      attempts: document.getElementById("attempts"),
+      streak:   document.getElementById("streak"),
+      round:    document.getElementById("round-content"),
+      history:  document.getElementById("history"),
+      audio:    document.getElementById("bot-audio"),
+    };
+
+    let client = null;
+
+    function setStatus(state, text) {
+      els.dot.className = "dot " + state;
+      els.status.textContent = text;
+    }
+
+    function renderState(state) {
+      els.score.textContent    = state.score ?? 0;
+      els.attempts.textContent = state.attempted ?? 0;
+      els.streak.textContent   = state.streak ?? 0;
+
+      if (state.phase === "game_over") {
+        els.round.innerHTML =
+          `<strong>Game over!</strong> Final score: ${state.score}/${state.attempted}.`;
+      } else if (state.current_word) {
+        const phaseLabel = {
+          prompting:  "🔊 Bot is announcing the word...",
+          listening:  "🎤 Listening — spell it out!",
+          evaluating: "⚙️ Evaluating your answer...",
+        }[state.phase] || "";
+        let badge = "";
+        if (state.last_result === "correct") {
+          badge = `<span class="badge correct">✓ correct</span>`;
+        } else if (state.last_result === "incorrect") {
+          badge = `<span class="badge incorrect">✗ try the next one</span>`;
+        }
+        // The word itself is hidden until after evaluation, so the
+        // user can't peek. We reveal it only via game history.
+        const wordDisplay = state.phase === "evaluating" || state.last_result
+          ? `<strong>${state.current_word}</strong>`
+          : `<strong>(listen carefully)</strong>`;
+        els.round.innerHTML = `
+          <div>Round ${state.round_index + 1}: ${wordDisplay} ${badge}</div>
+          <div style="color:var(--muted); font-size:13px; margin-top:4px;">${phaseLabel}</div>
+        `;
+      }
+
+      // History
+      if (state.history && state.history.length) {
+        els.history.innerHTML = state.history.slice().reverse().map(h => `
+          <div class="history-row ${h.correct ? "correct" : "incorrect"}">
+            <span class="word">${h.word}</span>
+            <span class="attempt">you said: ${h.attempt || "(nothing)"}</span>
+            <span>${h.correct ? "✓" : "✗"}</span>
+          </div>
+        `).join("");
+      }
+    }
+
+    async function start() {
+      els.btnStart.disabled = true;
+      setStatus("connecting", "Connecting...");
+
+      try {
+        const transport = new SmallWebRTCTransport({
+          // The server's WebRTC signaling endpoint.
+          connectionUrl: "/api/offer",
+        });
+
+        client = new PipecatClient({
+          transport,
+          enableMic: true,
+          enableCam: false,
+          callbacks: {
+            onConnected: () => setStatus("connected", "Connected"),
+            onDisconnected: () => {
+              setStatus("", "Disconnected");
+              els.btnStart.disabled = false;
+              els.btnEnd.disabled = true;
+            },
+            onBotReady: () => setStatus("connected", "Bot ready"),
+            onTrackStarted: (track, participant) => {
+              // Only the bot's audio gets piped to the page.
+              if (participant?.local) return;
+              if (track.kind !== "audio") return;
+              const stream = new MediaStream([track]);
+              els.audio.srcObject = stream;
+            },
+            // The SpellBeeProcessor pushes RTVIServerMessageFrames with
+            // `{type: "game_state", state: {...}}`. They surface here.
+            onServerMessage: (msg) => {
+              if (msg && msg.type === "game_state") {
+                renderState(msg.state || {});
+              }
+            },
+            onError: (err) => {
+              console.error("Pipecat error:", err);
+              setStatus("error", "Error — see console");
+            },
+          },
+        });
+
+        await client.connect();
+        els.btnEnd.disabled = false;
+      } catch (err) {
+        console.error("Failed to start session:", err);
+        setStatus("error", "Failed to connect");
+        els.btnStart.disabled = false;
+      }
+    }
+
+    async function end() {
+      els.btnEnd.disabled = true;
+      try { await client?.disconnect(); } catch (e) { console.error(e); }
+      client = null;
+    }
+
+    els.btnStart.addEventListener("click", start);
+    els.btnEnd.addEventListener("click", end);
+  </script>
+</body>
+</html>
